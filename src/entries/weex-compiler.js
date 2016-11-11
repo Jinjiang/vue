@@ -4,6 +4,9 @@ import { extend } from 'shared/util'
 import { compile as baseCompile, baseOptions } from 'weex/compiler/index'
 import { detectErrors } from 'compiler/error-detector'
 
+export { parseComponent } from 'sfc/parser'
+export { compileToFunctions } from 'web/compiler/index'
+
 export function compile (
   template: string,
   options?: CompilerOptions
