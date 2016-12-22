@@ -21,7 +21,6 @@ export function init (cfg) {
   renderer.Document = cfg.Document
   renderer.Element = cfg.Element
   renderer.Comment = cfg.Comment
-  renderer.sendTasks = cfg.sendTasks
 }
 
 /**
@@ -34,7 +33,6 @@ export function reset () {
   delete renderer.Document
   delete renderer.Element
   delete renderer.Comment
-  delete renderer.sendTasks
   Vue.config.isReservedTag = oriIsReservedTag
 }
 
@@ -68,9 +66,10 @@ export function createInstance (
 
   // Virtual-DOM object.
   const document = new renderer.Document(instanceId, config.bundleUrl)
+  const taskCenter = document.taskCenter
 
   instances[instanceId] = Object.assign({
-    instanceId, config, data, document
+    instanceId, config, data, document, taskCenter
   }, env)
 
   // Prepare native module getter and HTML5 Timer APIs.
@@ -107,7 +106,7 @@ export function createInstance (
   callFunction(instanceVars, appCode)
 
   // Send `createFinish` signal to native.
-  renderer.sendTasks(instanceId + '', [{ module: 'dom', method: 'createFinish', args: [] }], -1)
+  taskCenter.send('dom', { action: 'createFinish' }, [])
 }
 
 /**
@@ -139,7 +138,7 @@ export function refreshInstance (instanceId, data) {
     Vue.set(instance.app, key, data[key])
   }
   // Finally `refreshFinish` signal needed.
-  renderer.sendTasks(instanceId + '', [{ module: 'dom', method: 'refreshFinish', args: [] }], -1)
+  instance.taskCenter.send('dom', { action: 'refreshFinish' }, [])
 }
 
 /**
@@ -180,7 +179,7 @@ export function receiveTasks (instanceId, tasks) {
     }
   })
   // Finally `updateFinish` signal needed.
-  renderer.sendTasks(instanceId + '', [{ module: 'dom', method: 'updateFinish', args: [] }], -1)
+  instance.taskCenter.send('dom', { action: 'updateFinish' }, [])
 }
 
 /**
@@ -291,7 +290,7 @@ function genModuleGetter (instanceId) {
         const finalArgs = args.map(value => {
           return normalize(value, instance)
         })
-        renderer.sendTasks(instanceId + '', [{ module: name, method: methodName, args: finalArgs }], -1)
+        instance.taskCenter.send('module', { module: name, method: methodName }, finalArgs)
       }
     }
     return output
